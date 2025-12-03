@@ -20,11 +20,12 @@
 
 /* Private define ------------------------------------------------------------*/
 
-// ToDo: korrekte Prescaler-Einstellung
-#define   CAN1_CLOCK_PRESCALER    1000
+// ToDo: korrekte Prescaler-Einstellung check
+#define   CAN1_CLOCK_PRESCALER    12
 
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef     canHandle;
+uint8_t sendState  = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 static void initGpio(void);
@@ -80,7 +81,18 @@ void canInit(void) {
  */
 void canSendTask(void) {
 	// ToDo declare the required variables
+
 	static unsigned int sendCnt = 0;
+	CAN_TxHeaderTypeDef txHeader;
+	uint8_t txData[8];
+	txHeader.StdId = 0x1AB;
+	txHeader.ExtId = 0x00;
+	txHeader.RTR = CAN_RTR_DATA;
+	txHeader.IDE = CAN_ID_STD;
+	txHeader.DLC = 2;
+	txData[0] = 0xC3;
+	txData[1] = 10;
+	uint32_t txMailbox;
 
 
 
@@ -90,11 +102,19 @@ void canSendTask(void) {
 
 	// ToDo prepare send data
 
+	if (HAL_CAN_GetTxMailboxesFreeLevel(&canHandle) != 3 ) {
+		sendState = 1;
+	}
 
 
 	// ToDo send CAN frame
 
-
+	if (HAL_CAN_AddTxMessage(&canHandle, &txHeader, txData, &txMailbox) != HAL_OK){
+		if(sendState==1){
+			sendCnt++;
+		}
+	// send failed
+	}
 
 	// ToDo display send counter and send data
 
@@ -176,8 +196,8 @@ static void initCanPeripheral(void) {
 	canHandle.Init.SyncJumpWidth = CAN_SJW_1TQ;
 
 	// CAN Baudrate
-	canHandle.Init.TimeSeg1 = CAN_BS1_15TQ;
-	canHandle.Init.TimeSeg2 = CAN_BS2_6TQ;
+	canHandle.Init.TimeSeg1 = CAN_BS1_11TQ;
+	canHandle.Init.TimeSeg2 = CAN_BS2_4TQ;
 	canHandle.Init.Prescaler = CAN1_CLOCK_PRESCALER;
 
 	if (HAL_CAN_Init(&canHandle) != HAL_OK)
