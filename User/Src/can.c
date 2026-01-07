@@ -26,6 +26,10 @@
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef     canHandle;
 uint8_t sendState  = 0;
+static unsigned int recvCnt = 0;
+static unsigned int sendCnt = 0;
+uint8_t byte0;
+uint8_t byte1;
 
 /* Private function prototypes -----------------------------------------------*/
 static void initGpio(void);
@@ -38,6 +42,9 @@ static void initCanPeripheral(void);
 void canInitHardware(void) {
 	initGpio();
 	initCanPeripheral();
+
+
+
 }
 
 /**
@@ -82,7 +89,9 @@ void canInit(void) {
 void canSendTask(void) {
 	// ToDo declare the required variables
 
-	static unsigned int sendCnt = 0;
+	sendCnt ++;
+	LCD_SetPrintPosition(5,15);
+	printf("%5d", sendCnt);
 	CAN_TxHeaderTypeDef txHeader;
 	uint8_t txData[8];
 	txHeader.StdId = 0x1AB;
@@ -102,19 +111,25 @@ void canSendTask(void) {
 
 	// ToDo prepare send data
 
-	if (HAL_CAN_GetTxMailboxesFreeLevel(&canHandle) != 3 ) {
-		sendState = 1;
+	// Prüfen ob alle 3 Mailboxen frei sind
+	if (HAL_CAN_GetTxMailboxesFreeLevel(&canHandle) == 0)
+	{
+		// keine freie Mailbox → senden später erneut
+	}
+	else
+	{
+		if (HAL_CAN_AddTxMessage(&canHandle, &txHeader, txData, &txMailbox) != HAL_OK)
+		{
+			// Fehler beim Senden
+		}
+
+		// Optional: warten bis gesendet
+		while (HAL_CAN_IsTxMessagePending(&canHandle, txMailbox));
 	}
 
 
 	// ToDo send CAN frame
 
-	if (HAL_CAN_AddTxMessage(&canHandle, &txHeader, txData, &txMailbox) != HAL_OK){
-		if(sendState==1){
-			sendCnt++;
-		}
-	// send failed
-	}
 
 	// ToDo display send counter and send data
 
@@ -128,7 +143,31 @@ void canSendTask(void) {
  * @return none
  */
 void canReceiveTask(void) {
-	static unsigned int recvCnt = 0;
+
+	CAN_RxHeaderTypeDef rxHeader;
+	uint8_t rxData[8];
+	recvCnt ++;
+	LCD_SetPrintPosition(7,15);
+	printf("%5d", recvCnt);
+	// Prüfen ob Nachricht im FIFO0 liegt
+	if (HAL_CAN_GetRxFifoFillLevel(&canHandle, CAN_RX_FIFO0) > 0)
+	{
+		if (HAL_CAN_GetRxMessage(&canHandle, CAN_RX_FIFO0, &rxHeader, rxData) != HAL_OK)
+		{
+			// Empfangsfehler
+		}
+		else
+		{
+			// ==== Auswertung ====
+			if (rxHeader.IDE == CAN_ID_STD && rxHeader.StdId == 0x1AB)
+			{
+				byte0 = rxData[0];
+				byte1 = rxData[1];
+				LCD_SetPrintPosition(15, 15);
+				printf("%x %x",byte0,rxHeader);
+			}
+		}
+	}
 
 
 
@@ -246,12 +285,12 @@ static void initCanPeripheral(void) {
 	}
 
 	/*##-4- Activate CAN RX notification #######################################*/
-//	HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
-//	if (HAL_CAN_ActivateNotification(&canHandle, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
-//	{
-//		/* Notification Error */
-//		Error_Handler();
-//	}
+	//	HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+	//	if (HAL_CAN_ActivateNotification(&canHandle, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
+	//	{
+	//		/* Notification Error */
+	//		Error_Handler();
+	//	}
 
 }
 
