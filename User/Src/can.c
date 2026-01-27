@@ -94,7 +94,7 @@ void canSendTask(void) {
 	printf("%5d", sendCnt);
 	CAN_TxHeaderTypeDef txHeader;
 	uint8_t txData[8];
-	txHeader.StdId = 0x1AB;
+	txHeader.StdId = 0x1AE;
 	txHeader.ExtId = 0x00;
 	txHeader.RTR = CAN_RTR_DATA;
 	txHeader.IDE = CAN_ID_STD;
@@ -146,7 +146,7 @@ void canReceiveTask(void) {
 
 	CAN_RxHeaderTypeDef rxHeader;
 	uint8_t rxData[8];
-	recvCnt ++;
+
 	LCD_SetPrintPosition(7,15);
 	printf("%5d", recvCnt);
 	// Prüfen ob Nachricht im FIFO0 liegt
@@ -159,13 +159,29 @@ void canReceiveTask(void) {
 		else
 		{
 			// ==== Auswertung ====
-			if (rxHeader.IDE == CAN_ID_STD && rxHeader.StdId == 0x1AB)
+			if (rxHeader.IDE == CAN_ID_STD)
 			{
+				uint16_t id = rxHeader.StdId;
+
 				byte0 = rxData[0];
 				byte1 = rxData[1];
+
 				LCD_SetPrintPosition(15, 15);
-				printf("%x %x",byte0,rxHeader);
+				printf("STD %03x: %02x %02x", id, byte0, byte1);
+				recvCnt ++;
 			}
+			else if (rxHeader.IDE == CAN_ID_EXT)
+			{
+				uint32_t id = rxHeader.ExtId;
+
+				byte0 = rxData[0];
+				byte1 = rxData[1];
+
+				LCD_SetPrintPosition(15, 15);
+				printf("EXT %08lx: %02x %02x", id, byte0, byte1);
+				recvCnt ++;
+			}
+
 		}
 	}
 

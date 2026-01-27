@@ -91,9 +91,10 @@ int main(void)
 		// ToDo: send data over CAN when user button has been pressed
 		if(GetUserButtonPressed()==1){
 			canSendTask();
-			canReceiveTask();
+
 		}
 
+		canReceiveTask();
 
 
 		// ToDo: check if data has been received
