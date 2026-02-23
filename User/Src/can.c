@@ -30,6 +30,7 @@ static unsigned int recvCnt = 0;
 static unsigned int sendCnt = 0;
 uint8_t byte0;
 uint8_t byte1;
+uint16_t bigbyte;
 
 /* Private function prototypes -----------------------------------------------*/
 static void initGpio(void);
@@ -90,8 +91,8 @@ void canSendTask(void) {
 	// ToDo declare the required variables
 
 	sendCnt ++;
-	LCD_SetPrintPosition(5,15);
-	printf("%5d", sendCnt);
+	LCD_SetPrintPosition(5,15);  //Je nach
+	printf("%5d", sendCnt);  //Anwendung
 	CAN_TxHeaderTypeDef txHeader;
 	uint8_t txData[8];
 	txHeader.StdId = 0x1AE;
@@ -147,8 +148,8 @@ void canReceiveTask(void) {
 	CAN_RxHeaderTypeDef rxHeader;
 	uint8_t rxData[8];
 
-	LCD_SetPrintPosition(7,15);
-	printf("%5d", recvCnt);
+	LCD_SetPrintPosition(7,15); //Je nach
+	printf("%5d", recvCnt);  //Anwendung
 	// Prüfen ob Nachricht im FIFO0 liegt
 	if (HAL_CAN_GetRxFifoFillLevel(&canHandle, CAN_RX_FIFO0) > 0)
 	{
@@ -165,7 +166,7 @@ void canReceiveTask(void) {
 
 				byte0 = rxData[0];
 				byte1 = rxData[1];
-
+				bigbyte = (byte0 << 8)| byte1;
 				LCD_SetPrintPosition(15, 15);
 				printf("STD %03x: %02x %02x", id, byte0, byte1);
 				recvCnt ++;
@@ -247,7 +248,7 @@ static void initCanPeripheral(void) {
 	canHandle.Init.AutoRetransmission = ENABLE;
 	canHandle.Init.ReceiveFifoLocked = DISABLE;
 	canHandle.Init.TransmitFifoPriority = DISABLE;
-	canHandle.Init.Mode = CAN_MODE_NORMAL;
+	canHandle.Init.Mode = CAN_MODE_LOOPBACK;
 	canHandle.Init.SyncJumpWidth = CAN_SJW_1TQ;
 
 	// CAN Baudrate
