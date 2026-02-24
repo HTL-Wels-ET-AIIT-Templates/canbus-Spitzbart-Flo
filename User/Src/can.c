@@ -25,7 +25,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef     canHandle;
-uint8_t sendState  = 0;
 static unsigned int recvCnt = 0;
 static unsigned int sendCnt = 0;
 uint8_t byte0;
