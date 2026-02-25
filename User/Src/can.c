@@ -103,7 +103,7 @@ void canSendTask(void) {
 	txData[1] = 10;
 	uint32_t txMailbox;
 
-	uint16_t temperature=525;
+	uint16_t temperature=525; // Test
 	txData[0] = (uint8_t)(temperature >> 8);   // High Test
 	txData[1] = (uint8_t)(temperature & 0xFF); // Low Test
 
